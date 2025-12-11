@@ -20,7 +20,14 @@ from elasticapm.handlers.logging import LoggingHandler
 
 ELASTIC_APM_SERVER_URL = os.getenv('ELASTIC_APM_SERVER_URL', 'http://localhost:8200')
 ELASTIC_APM_SERVICE_NAME = os.getenv('ELASTIC_APM_SERVICE_NAME', 'attendance')
-CONFIG_FILE = os.getenv('CONFIG_FILE', '/app/config/config.yaml')
+
+# -------------------------------
+# FIXED CONFIG FILE PATH HANDLING
+# -------------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_CONFIG = os.path.join(BASE_DIR, "config", "config.yaml")
+CONFIG_FILE = os.getenv("CONFIG_FILE", DEFAULT_CONFIG)
+# -------------------------------
 
 app = Flask(__name__)
 
@@ -42,6 +49,7 @@ app.config['MYSQL_USERNAME'] = config_properties['mysql']['username']
 app.config['MYSQL_PASSWORD'] = config_properties['mysql']['password']
 app.config['MYSQL_DATABASE'] = config_properties['mysql']['db_name']
 
+
 @app.route("/attendance/healthz", methods=['GET'])
 def check_health():
     """Method for checking the health of MySQL"""
@@ -52,6 +60,7 @@ def check_health():
     except:
         app.logger.error("Unable to make mysql connection", exc_info=True)
         return jsonify(mysql="down", description="MySQL is not healthy"), 400
+
 
 @app.route("/attendance/create", methods=['POST'])
 def push_attendance_data():
@@ -76,6 +85,7 @@ def push_attendance_data():
         app.logger.error("Unable to push attendance data in MySQL", exc_info=True)
         return jsonify(message="Error in pushing attendance data"), 400
 
+
 @app.route("/attendance/search", methods=['GET'])
 def fetch_attendance_data():
     """For pulling attendance data from MySQL Database"""
@@ -98,6 +108,7 @@ def fetch_attendance_data():
         app.logger.error("Unable to pull attendance data from MySQL", exc_info=True)
         return jsonify(message="Error while pulling data for attendance"), 200
 
+
 def create_mysql_client():
     """For creating the client connection with MySQL"""
     connection = mysql.connector.connect(
@@ -107,6 +118,7 @@ def create_mysql_client():
         database=app.config['MYSQL_DATABASE']
     )
     return connection
+
 
 if __name__ == "__main__":
     handler = LoggingHandler(client=apm.client)
